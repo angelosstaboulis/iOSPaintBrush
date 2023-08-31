@@ -25,12 +25,15 @@ class ViewController: UIViewController, PKToolPickerObserver {
         initialView()
         // Do any additional setup after loading the view.
     }
-
-
+    
+    
 }
 extension ViewController {
     func initialCanvas(){
         canvas.drawingPolicy = .anyInput
+        canvas.isOpaque = true
+        canvas.backgroundColor = UIColor.clear
+        
         canvas.frame = view.frame
         canvas.tool = PKInkingTool(.pen, color: .black, width: 30)
         self.view.addSubview(canvas)
@@ -87,14 +90,14 @@ extension ViewController {
     }
     @objc func clickOpenFile(){
         do{
-                canvas.drawing = PKDrawing()
-                let documentDirectory = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor:nil, create:false)
-                let image = UIImage(contentsOfFile:documentDirectory.path+"/"+"draw.png")
-                let imageView = UIImageView(image: image)
-                imageView.frame = canvas.frame
-                canvas.addSubview(imageView)
+            canvas.drawing = PKDrawing()
+            let documentDirectory = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor:nil, create:false)
+            let image = UIImage(contentsOfFile:documentDirectory.path+"/"+"draw.png")
+            let imageView = UIImageView(image: image)
+            imageView.frame = canvas.frame
+            canvas.addSubview(imageView)
         }catch{
-                debugPrint("went wrong!!!"+error.localizedDescription)
+            debugPrint("went wrong!!!"+error.localizedDescription)
         }
     }
     @objc func clickSaveFile(){
@@ -111,17 +114,25 @@ extension ViewController {
         self.present(alert, animated: true, completion: nil)
     }
     @objc func clickCut(){
-        pasteboard.setData(canvas.drawing.dataRepresentation(), forPasteboardType: "Image")
-        canvas.drawing = PKDrawing()
+        if canvas.drawing.strokes.count == 1 {
+            let image =  canvas.drawing.image(from: canvas.drawing.bounds, scale: 1)
+            pasteboard.setData(image.pngData()!, forPasteboardType: "Image")
+            canvas.drawing = PKDrawing()
+        }
+        
+        
     }
     @objc func clickCopy(){
-            pasteboard.setData(canvas.drawing.dataRepresentation(), forPasteboardType: "Image")
+        if canvas.drawing.strokes.count == 1 {
+            let image =  canvas.drawing.image(from: canvas.drawing.bounds, scale: 1)
+            pasteboard.setData(image.pngData()!, forPasteboardType: "Image")
+        }
     }
     @objc func cickPaste(){
-        do{
-            canvas.drawing = try PKDrawing(data: pasteboard.data(forPasteboardType: "Image")!)
-        }catch{
-            debugPrint("something went wrong!!!")
-        }
+        let image = pasteboard.data(forPasteboardType: "Image")!
+        let imageView = UIImageView(image: UIImage(data: image))
+        imageView.center = canvas.center
+        canvas.insertSubview(imageView, aboveSubview: canvas)
+        
     }
 }
